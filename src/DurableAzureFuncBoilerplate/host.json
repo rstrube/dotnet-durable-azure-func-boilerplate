@@ -1,0 +1,16 @@
+{
+    "version": "2.0",
+    "logging": {
+        "logLevel": {
+            "default": "None",
+            "Function.DurableFuncForShopifyWebhook_HttpStart": "Information",
+            "Function.CreateNewTessituraConstituentAndMembership": "Information"
+        },
+        "applicationInsights": {
+            "samplingSettings": {
+                "isEnabled": true,
+                "excludedTypes": "Request"
+            }
+        }
+    }
+}
