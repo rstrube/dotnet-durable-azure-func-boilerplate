@@ -3,8 +3,9 @@
     "logging": {
         "logLevel": {
             "default": "None",
-            "Function.DurableFuncForShopifyWebhook_HttpStart": "Information",
-            "Function.CreateNewTessituraConstituentAndMembership": "Information"
+            "Function.DurableAzureFuncBoilerplate_HttpStart": "Information",
+            "Function.RunOrchestrator": "Information",
+            "Function.GetActivitySuggestion": "Information"
         },
         "applicationInsights": {
             "samplingSettings": {

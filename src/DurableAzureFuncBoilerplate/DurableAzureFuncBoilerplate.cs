@@ -12,47 +12,63 @@ using System.Net.Http;
 using System.Net;
 using System;
 using DurableAzureFuncBoilerplate.Models;
+using System.Threading;
 
 namespace DurableAzureFuncBoilerplate;
 
-public class DurableAzureFunc
+public class DurableAzureFuncBoilerplate
 {
     [FunctionName(nameof(RunOrchestrator))]
-    public async Task<ActivityResponse> RunOrchestrator(
+    public async Task<List<object>> RunOrchestrator(
         [OrchestrationTrigger]
             IDurableOrchestrationContext context,
         ILogger log)
     {
         var activityRequest = context.GetInput<ActivityRequest>();
 
-        var outputs = new List<Activity>();
+        log.LogInformation($"Starting RunOrchestrator for:\n{JsonSerializer.Serialize(activityRequest, new JsonSerializerOptions() { WriteIndented = true })}");
+
+        var outputs = new List<object>();
 
         foreach(var participants in activityRequest.NumberOfParticipants)
         {
-            outputs.Add(await context.CallActivityAsync<Activity>(nameof(GetActivitySuggestion), participants));
+            var activity = await context.CallActivityAsync<object>(nameof(GetActivitySuggestion), participants);
+            outputs.Add(activity);
         }
 
-        return new ActivityResponse()
-        {
-            Activities = outputs
-        };
+        return outputs;
     }
 
     [FunctionName(nameof(GetActivitySuggestion))]
-    public async Task<Activity> GetActivitySuggestion(
+    public async Task<object> GetActivitySuggestion(
         [ActivityTrigger]
             int participants,
         ILogger log)
     {
-        log.LogInformation($"Starting GetActivitySuggestion for participants:{participants}");
+        log.LogInformation($"Starting GetActivitySuggestion for participants: {participants}");
 
         var boredActivity = await _boredClient.GetActivity(participants);
 
-        return new Activity(boredActivity);
+        if(boredActivity == null)
+        {
+            log.LogError("Received null suggestion from upstream API");
+            return null;
+        }
+
+        log.LogInformation($"Received suggestion, upstream model:\n{JsonSerializer.Serialize(boredActivity, new JsonSerializerOptions() { WriteIndented = true })}");
+
+        var activity = new Activity(boredActivity);
+
+        log.LogInformation($"After transformation, web application model:\n{JsonSerializer.Serialize(activity, new JsonSerializerOptions() { WriteIndented = true })}");
+
+        //add in a slight delay 
+        await Task.Delay(5000);
+
+        return activity;
     }
 
-    [FunctionName(nameof(DurableAzureFunc_HttpStart))]
-    public async Task<HttpResponseMessage> DurableAzureFunc_HttpStart(
+    [FunctionName(nameof(DurableAzureFuncBoilerplate_HttpStart))]
+    public async Task<HttpResponseMessage> DurableAzureFuncBoilerplate_HttpStart(
         [HttpTrigger(AuthorizationLevel.Anonymous, "post")]
             HttpRequestMessage request,
         [DurableClient]
@@ -94,7 +110,7 @@ public class DurableAzureFunc
     private BoredClientConfig _boredClientConfig;
     private IBoredClient _boredClient;
 
-    public DurableAzureFunc(IOptions<BoredClientConfig> boredClientConfig, IBoredClient boredClient)
+    public DurableAzureFuncBoilerplate(IOptions<BoredClientConfig> boredClientConfig, IBoredClient boredClient)
     {
         _boredClientConfig = boredClientConfig.Value;
         _boredClient = boredClient;
