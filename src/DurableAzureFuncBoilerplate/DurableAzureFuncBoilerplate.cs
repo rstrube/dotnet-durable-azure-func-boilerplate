@@ -12,7 +12,6 @@ using System.Net.Http;
 using System.Net;
 using System;
 using DurableAzureFuncBoilerplate.Models;
-using System.Threading;
 
 namespace DurableAzureFuncBoilerplate;
 
